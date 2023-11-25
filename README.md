@@ -1,4 +1,4 @@
-# CircuitPython Community Library Bundle
+# CircuitPython Good-Enough.technology Library Bundle
 
 [![Doc Status](https://readthedocs.org/projects/circuitpython/badge/?version=latest)](https://circuitpython.readthedocs.io/en/latest/docs/drivers.html) [![Discord](https://img.shields.io/discord/327254708534116352.svg)](https://adafru.it/discord)
 
@@ -16,7 +16,7 @@ information.
 
 # Use
 To use the bundle download the zip (not source zip) from the
-[latest release](https://github.com/adafruit/CircuitPython_Community_Bundle/releases/latest),
+[latest release](https://github.com/good-enough-technology/CircuitPython_GoodEnough_Bundle/releases/latest),
 unzip it and copy over the subfolders, such as `lib`, into the root of your
 CircuitPython device. Make sure to indicate that it should be merged with the
 existing folder when it exists.
