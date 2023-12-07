@@ -21,6 +21,16 @@ unzip it and copy over the subfolders, such as `lib`, into the root of your
 CircuitPython device. Make sure to indicate that it should be merged with the
 existing folder when it exists.
 
+Alteratively use `circup` by adding as a custom bundle:
+```
+circup bundle-add good-enough-technology/circuitpython_goodenough_bundle
+```
+
+Then the new libraries will be immediately available for installation, e.g.
+```
+circup install sensirion_i2c_sen5x
+```
+
 # Development
 
 After you clone this repository you must run `git submodule init` on update
