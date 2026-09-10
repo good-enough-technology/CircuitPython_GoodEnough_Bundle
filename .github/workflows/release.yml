@@ -10,20 +10,18 @@ jobs:
     steps:
     - name: Translate Repo Name For Build Tools filename_prefix
       id: repo-name
+      env:
+        REPO: ${{ github.repository }}
       run: |
-        echo "repo-name=$(
-        echo ${{ github.repository }} |
-        awk -F '\/' '{ print tolower($2) }' |
-        tr '_' '-'
-        )" >> $GITHUB_OUTPUT
+        echo "repo-name=$(echo "$REPO" | awk -F '/' '{ print tolower($2) }' | tr '_' '-')" >> "$GITHUB_OUTPUT"
     - name: Set up Python 3
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: 3.x
     - name: Versions
       run: |
         python3 --version
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
       with:
         submodules: true
     - name: Fetch correct submodule shas
@@ -32,9 +30,16 @@ jobs:
       run: |
         sudo apt-get install -y gettext gawk
         pip install -r requirements.txt
-    - name: Package Folder Prefix For circuitpython-build-tools (Community Bundle Specific)
-      id: pkg-folder
+    - name: Build assets
+      env:
+        # Passed as environment, not spliced into the script by the expression.
+        FILENAME_PREFIX: ${{ steps.repo-name.outputs.repo-name }}
       run: |
+        # Computed in the step that consumes it. Going via $GITHUB_OUTPUT and an
+        # expression would put a directory name into the next step as script text:
+        # a newline in it writes extra variables to $GITHUB_OUTPUT, and a quote or
+        # backtick escapes whatever quoting that step uses. Held in a shell
+        # variable it stays exactly one argument.
         prefix=$(
         ls -RUx |
         gawk -F '\n' '{ match($1, /(drivers|helpers)\/(.+)\/(.+)\:/, arr) ; if (length(arr[0]) > 0 && match(arr[3], arr[2]) > 0) printf "%s, ", arr[3] }' |
@@ -47,17 +52,7 @@ jobs:
           echo "::error::no package folders matched under libraries/; refusing to build an empty bundle"
           exit 1
         fi
-        # ${{ }} splices this into the later run: block as text, before any shell
-        # sees it, so the quotes there cannot contain a folder name carrying a
-        # quote or a backtick. Allow only what a module name can be.
-        case "$prefix" in
-          *[!A-Za-z0-9_, -]*)
-            echo "::error::unexpected character in package folder list: $prefix"
-            exit 1 ;;
-        esac
-        echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
-    - name: Build assets
-      run: circuitpython-build-bundles --filename_prefix ${{ steps.repo-name.outputs.repo-name }} --library_location libraries --library_depth 2 --package_folder_prefix "${{ steps.pkg-folder.outputs.prefix }}"
+        circuitpython-build-bundles --filename_prefix "$FILENAME_PREFIX" --library_location libraries --library_depth 2 --package_folder_prefix "$prefix"
     - name: Upload Release Assets
       uses: shogo82148/actions-upload-release-asset@v1
       with:
