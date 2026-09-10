@@ -32,4 +32,9 @@ gawk -F '\n' '{ match($1, /(drivers|helpers)\/(.+)\/(.+)\:/, arr) ; if (length(a
 gawk '{ print substr($0, 1, length($0) - 2) }'
 )
 
+if [ -z "$P" ]; then
+    echo "error: no package folders matched under libraries/; refusing to build an empty bundle" >&2
+    exit 1
+fi
+
 circuitpython-build-bundles --filename_prefix circuitpython-community-bundle --library_location libraries --library_depth 2 --package_folder_prefix "$P"

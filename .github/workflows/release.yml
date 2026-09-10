@@ -35,11 +35,27 @@ jobs:
     - name: Package Folder Prefix For circuitpython-build-tools (Community Bundle Specific)
       id: pkg-folder
       run: |
-        echo prefix=$(
+        prefix=$(
         ls -RUx |
         gawk -F '\n' '{ match($1, /(drivers|helpers)\/(.+)\/(.+)\:/, arr) ; if (length(arr[0]) > 0 && match(arr[3], arr[2]) > 0) printf "%s, ", arr[3] }' |
         gawk '{ print substr($0, 1, length($0) - 2) }'
-        ) >> $GITHUB_OUTPUT
+        )
+        # An empty list is never correct: build-tools splits on ", " and matches
+        # with startswith(), and "".startswith("") is True, so an empty prefix
+        # would silently make every folder -- docs/, tests/, ci/ -- a package.
+        if [ -z "$prefix" ]; then
+          echo "::error::no package folders matched under libraries/; refusing to build an empty bundle"
+          exit 1
+        fi
+        # ${{ }} splices this into the later run: block as text, before any shell
+        # sees it, so the quotes there cannot contain a folder name carrying a
+        # quote or a backtick. Allow only what a module name can be.
+        case "$prefix" in
+          *[!A-Za-z0-9_, -]*)
+            echo "::error::unexpected character in package folder list: $prefix"
+            exit 1 ;;
+        esac
+        echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
     - name: Build assets
       run: circuitpython-build-bundles --filename_prefix ${{ steps.repo-name.outputs.repo-name }} --library_location libraries --library_depth 2 --package_folder_prefix "${{ steps.pkg-folder.outputs.prefix }}"
     - name: Upload Release Assets
